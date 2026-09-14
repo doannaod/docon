@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+build/
+dist/
+*.spec.bak
+installer/output/
+
+# Program çalışma verileri (kullanıcı makinesine özel)
+runtime/
+*.log
+durum.json
+
+# Test PDF'leri ve çıktıları (büyük dosyalar repoya girmez)
+test-kitaplar/
+cikti/
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Yerel geliştirme notu (repoya girmez)
+CLAUDE.md
