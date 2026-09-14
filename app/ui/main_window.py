@@ -81,10 +81,13 @@ class MainWindow(QMainWindow):
         self.nav_home = QPushButton("  " + tr("Ana Sayfa")); self.nav_home.setIcon(svg_icon("home", theme.ACCENT_DARK))
         self.nav_hist = QPushButton("  " + tr("Geçmiş İşler")); self.nav_hist.setIcon(svg_icon("clock", theme.TEXT_SOFT))
         self.nav_set = QPushButton("  " + tr("Ayarlar")); self.nav_set.setIcon(svg_icon("gear", theme.TEXT_SOFT))
+        self.nav_install = QPushButton("  " + tr("Kurulum sürüyor")); self.nav_install.setIcon(svg_icon("download", theme.ACCENT))
+        self.nav_install.hide()  # yalnızca indirme sürerken görünür, diğer sayfadan geri dönüş için
         group = QButtonGroup(self); group.setExclusive(True)
-        for b in (self.nav_home, self.nav_hist, self.nav_set):
+        for b in (self.nav_home, self.nav_hist, self.nav_set, self.nav_install):
             b.setCheckable(True); b.setCursor(Qt.PointingHandCursor); group.addButton(b)
-        sl.addWidget(self.nav_home); sl.addWidget(self.nav_hist); sl.addStretch(); sl.addWidget(self.nav_set)
+        sl.addWidget(self.nav_home); sl.addWidget(self.nav_hist); sl.addWidget(self.nav_install)
+        sl.addStretch(); sl.addWidget(self.nav_set)
         self.side_footer = label(tr("Ortam denetleniyor…"), "SidebarFooter", wrap=True)
         sl.addWidget(self.side_footer)
         outer.addWidget(side)
@@ -100,6 +103,7 @@ class MainWindow(QMainWindow):
         self.nav_home.clicked.connect(self.go_home)
         self.nav_hist.clicked.connect(self.go_history)
         self.nav_set.clicked.connect(self.go_settings)
+        self.nav_install.clicked.connect(self.go_setup)
         self.home.files_added.connect(self.on_files_added)
         self.home.book_selected.connect(self.on_book_selected)
         self.home.rename_requested.connect(self.on_rename)
@@ -165,28 +169,30 @@ class MainWindow(QMainWindow):
 
     # ====================== gezinme ======================
     def _installing(self) -> bool:
-        """Kurulum indirmesi sürüyor mu? Sürüyorsa diğer sayfalara geçişi engelle —
-        aksi halde kullanıcı Ayarlar/Geçmiş'e gidip ilerleme ekranına geri dönemiyordu."""
         return bool(self._installer and self._installer.isRunning())
 
+    def _refresh_install_indicator(self) -> None:
+        show = self._installing()
+        self.nav_install.setVisible(show)
+        if show:
+            self.nav_install.setChecked(self.stack.currentWidget() is self.setup)
+
+    def go_setup(self) -> None:
+        self.nav_install.setChecked(True)
+        self.stack.setCurrentWidget(self.setup)
+
     def go_home(self) -> None:
-        if self._installing():
-            self.stack.setCurrentWidget(self.setup); return
         self.home.set_books(self.queue.items)
         self.home.set_recent(self.history.completed())
         self.nav_home.setChecked(True)
         self.stack.setCurrentWidget(self.home)
 
     def go_history(self) -> None:
-        if self._installing():
-            self.stack.setCurrentWidget(self.setup); return
         self.hist.set_jobs(self.history.all())
         self.nav_hist.setChecked(True)
         self.stack.setCurrentWidget(self.hist)
 
     def go_settings(self) -> None:
-        if self._installing():
-            self.stack.setCurrentWidget(self.setup); return
         self.settings_page.load()
         dirs = find_raw_dirs([Path(j.output_dir) for j in self.history.completed()])
         self.settings_page.set_clean_info(len(dirs), sum(folder_size_bytes(d) for d in dirs))
@@ -340,12 +346,13 @@ class MainWindow(QMainWindow):
         w.progress.connect(lambda f, s, e, d, t: self.setup.update_progress(f, s or None, e, int(d), int(t)))
         w.message.connect(lambda m: self.setup.set_banner(m))
         w.finished_ok.connect(self._on_install_done)
-        w.failed.connect(lambda m: self.setup.set_banner(tr("Kurulum durdu: {m}", m=m), error=True))
-        w.paused.connect(lambda: self.setup.set_banner(tr("Duraklatıldı. 'Devam et' ile kaldığı yerden sürer.")))
+        w.failed.connect(lambda m: (self.setup.set_banner(tr("Kurulum durdu: {m}", m=m), error=True), self._refresh_install_indicator()))
+        w.paused.connect(lambda: (self.setup.set_banner(tr("Duraklatıldı. 'Devam et' ile kaldığı yerden sürer.")), self._refresh_install_indicator()))
         self._installer = w
         self.setup.retry.hide()
         keep_awake(True)
         w.start()
+        self._refresh_install_indicator()
 
     def _on_setup_pause(self) -> None:
         if self._installer and self._installer.isRunning():
@@ -361,6 +368,7 @@ class MainWindow(QMainWindow):
 
     def _on_install_done(self) -> None:
         keep_awake(False)
+        self._refresh_install_indicator()
         self.setup.set_banner(tr("Kurulum tamamlandı. Program kullanıma hazır."))
         self._notify(tr("Program kullanıma hazır"), tr("Gereken yazılım ve modeller indi. Artık kitap ekleyip çevirebilirsin."))
         self._env_worker = EnvironmentCheckWorker(self)
