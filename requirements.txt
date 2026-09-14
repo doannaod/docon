@@ -1,0 +1,8 @@
+# Program (arayüz + analiz). Ağır motor bağımlılıkları (torch, marker-pdf) buraya girmez;
+# onları program ilk açılışta kendi çalışma ortamına kurar (bkz. app/core/environment.py).
+PySide6>=6.11,<7
+pypdf>=6,<7
+
+# Paketleme (yalnızca geliştirme)
+pyinstaller>=6.22
+Pillow>=11  # app/assets/icon.ico üretmek için (bkz. scripts/make_icon.py)
