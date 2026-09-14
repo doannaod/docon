@@ -7,7 +7,7 @@
 ; Per-user install (%LOCALAPPDATA%\Programs) — no administrator rights required.
 
 #define MyAppName "Docon"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Docon"
 #define MyAppExeName "Docon.exe"
 #define MyAppId "{{6F1D9C2A-6C3E-4B7B-9C2F-2C6B6C9A2F41}"
