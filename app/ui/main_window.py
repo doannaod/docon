@@ -164,18 +164,29 @@ class MainWindow(QMainWindow):
         self.settings_page.set_about(f"marker-pdf {MARKER_VERSION} · {gpu_label}", update_text)
 
     # ====================== gezinme ======================
+    def _installing(self) -> bool:
+        """Kurulum indirmesi sürüyor mu? Sürüyorsa diğer sayfalara geçişi engelle —
+        aksi halde kullanıcı Ayarlar/Geçmiş'e gidip ilerleme ekranına geri dönemiyordu."""
+        return bool(self._installer and self._installer.isRunning())
+
     def go_home(self) -> None:
+        if self._installing():
+            self.stack.setCurrentWidget(self.setup); return
         self.home.set_books(self.queue.items)
         self.home.set_recent(self.history.completed())
         self.nav_home.setChecked(True)
         self.stack.setCurrentWidget(self.home)
 
     def go_history(self) -> None:
+        if self._installing():
+            self.stack.setCurrentWidget(self.setup); return
         self.hist.set_jobs(self.history.all())
         self.nav_hist.setChecked(True)
         self.stack.setCurrentWidget(self.hist)
 
     def go_settings(self) -> None:
+        if self._installing():
+            self.stack.setCurrentWidget(self.setup); return
         self.settings_page.load()
         dirs = find_raw_dirs([Path(j.output_dir) for j in self.history.completed()])
         self.settings_page.set_clean_info(len(dirs), sum(folder_size_bytes(d) for d in dirs))
