@@ -19,6 +19,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ("app/assets/icon.ico", "app/assets"),
+        ("engine", "engine"),
     ],
     hiddenimports=[
         "PySide6.QtSvg",

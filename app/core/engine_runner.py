@@ -21,7 +21,13 @@ TEST_KLASOR = "_test-kosusu"
 
 
 def kosucu_path() -> Path:
-    return install_dir() / "engine" / "kosucu.py"
+    """engine/kosucu.py'nin yeri. Geliştirmede kurulum klasörünün altında; paketlenmiş
+    (PyInstaller onedir) sürümde ise veri dosyaları exe'nin yanına değil `_internal/`
+    alt klasörüne konur — ikisini de dener."""
+    direct = install_dir() / "engine" / "kosucu.py"
+    if direct.exists():
+        return direct
+    return install_dir() / "_internal" / "engine" / "kosucu.py"
 
 
 class ConversionRunner(QObject):
